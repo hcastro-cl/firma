@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>Personalizar firma</title>
+	<style>
+		body {
+			font-family: 'Work Sans', sans-serif;
+			background-color: #f4f4f4;
+			margin: 0;
+			padding: 0;
+		}
+
+		.container {
+			background-color: #fff;
+			border-radius: 5px;
+			box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+			padding: 20px;
+			max-width: 600px;
+			margin: auto;
+		}
+
+		h2,
+		h3 {
+			text-align: center;
+		}
+
+		label {
+			display: block;
+			margin-bottom: 5px;
+		}
+
+		.image-button {
+			display: inline-block;
+			width: 177px;
+			height: 100px;
+			margin-right: 10px;
+			background-size: cover;
+			border: none;
+			cursor: pointer;
+			border-radius: 5px;
+		}
+
+		.image-button.selected {
+			border: 5px solid #007bff;
+		}
+
+		input[type="text"],
+		button {
+			width: 100%;
+			padding: 10px;
+			margin-bottom: 15px;
+			border: 1px solid #ccc;
+			border-radius: 3px;
+			box-sizing: border-box;
+		}
+
+		button {
+			background-color: #777;
+			color: #fff;
+			cursor: pointer;
+		}
+
+		button:hover {
+			background-color: #888;
+		}
+
+		canvas {
+			display: block;
+			margin: 20px auto;
+			max-width: 100%;
+			/* Que no sobrepase el contenedor */
+			height: auto;
+			/* Altura proporcional */
+			box-shadow: 0 0 8px rgba(0, 0, 0, 0.15);
+			border-radius: 4px;
+		}
+
+		#download-link {
+			display: block;
+			text-align: center;
+			margin-top: 10px;
+		}
+	</style>
+
+	<link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;600&display=swap" rel="stylesheet">
+</head>
+
+<body>
+	<div class="container">
+		<h2>Personalizar firma</h2>
+		<strong>Fondo transparente</strong><br />
+		<div>
+			<button type="button" class="image-button" style="background-image: url('logos/logo-color.png')" data-img="logos/logo-color.png" data-bcolor="trans"></button>
+			<button type="button" class="image-button" style="background-image: url('logos/logo-negro.png')" data-img="logos/logo-negro.png" data-bcolor="trans"></button>
+			<button type="button" class="image-button" style="background-image: url('logos/logo-blanco.png')" data-img="logos/logo-blanco.png" data-bcolor="trans"></button>
+		</div>
+		<strong>Fondo blanco</strong><br />
+		<div>
+			<button type="button" class="image-button" style="background-image: url('logos/logo-color2.png')" data-img="logos/logo-color2.png" data-bcolor="blanco"></button>
+			<button type="button" class="image-button" style="background-image: url('logos/logo-negro2.png')" data-img="logos/logo-negro2.png" data-bcolor="blanco"></button>
+		</div>
+		<strong>Fondo negro</strong><br />
+		<div>
+			<button type="button" class="image-button" style="background-image: url('logos/logo-blanco2.png')" data-img="logos/logo-blanco2.png" data-bcolor="negro"></button>
+		</div>
+
+		<h3>Completar los siguientes datos</h3>
+		<input type="text" id="text1" placeholder="Nombre">
+		<input type="text" id="text2" placeholder="correo@utalca.cl">
+		<input type="text" id="text3" placeholder="Cargo (opcional)">
+		<input type="text" id="text4" placeholder="Anexo (opcional)">
+		<button onclick="generateSignature()">Generar firma</button>
+
+		<canvas id="canvas" width="2400" height="1080" style="display:none;"></canvas>
+		<button id="download-link" style="display:none;">Descargar firma</button>
+	</div>
+
+	<script>
+		let selectedImage = '';
+		let backColor = '';
+
+		document.querySelectorAll('.image-button').forEach(button => {
+			button.addEventListener('click', () => {
+				document.querySelectorAll('.image-button').forEach(btn => btn.classList.remove('selected'));
+				button.classList.add('selected');
+				selectedImage = button.dataset.img;
+				backColor = button.dataset.bcolor;
+			});
+		});
+
+		function generateSignature() {
+			const text1 = document.getElementById('text1').value || "Nombres Apellido1 Apellido2";
+			const text2value = document.getElementById('text2').value || "correo@utalca.cl";
+			const text3value = document.getElementById('text3').value;
+			const text4value = document.getElementById('text4').value;
+			const text2 = text4value ? `${text2value}, Anexo: ${text4value}` : text2value;
+			const text3 = text3value;
+			const text4 = "Instituto de Matemáticas";
+			const text5 = "Universidad de Talca, Chile";
+
+			if (!selectedImage) {
+				alert("Selecciona un logo primero.");
+				return;
+			}
+
+			const logo = new Image();
+			logo.crossOrigin = "anonymous";
+			logo.src = selectedImage;
+
+			logo.onload = () => {
+				const logoWidth = 1800;
+				const logoHeight = 1080;
+
+				// Medimos los textos para calcular el ancho extra
+				const measuringCanvas = document.createElement("canvas");
+				const measuringCtx = measuringCanvas.getContext("2d");
+				measuringCtx.font = "600 90px 'Work Sans'";
+				const width1 = measuringCtx.measureText(text1).width;
+				const width2 = measuringCtx.measureText(text2).width;
+				measuringCtx.font = "400 80px 'Work Sans'";
+				const width3 = measuringCtx.measureText(text3).width;
+				const width4 = measuringCtx.measureText(text4).width;
+
+				const maxTextWidth = Math.max(width1, width2, width3, width4);
+				const margin = 70;
+				const textStartX = logoWidth + margin;
+				const totalWidth = textStartX + maxTextWidth + 2 * margin;
+				const totalHeight = logoHeight;
+
+				// Crear canvas con nuevo tamaño
+				const canvas = document.getElementById('canvas');
+				const ctx = canvas.getContext('2d');
+				canvas.width = totalWidth;
+				canvas.height = totalHeight;
+
+				// Fondo
+				if (backColor === 'blanco') {
+					ctx.fillStyle = "#ffffff";
+					ctx.fillRect(0, 0, totalWidth, totalHeight);
+				} else if (backColor === 'negro') {
+					ctx.fillStyle = "#000000";
+					ctx.fillRect(0, 0, totalWidth, totalHeight);
+				} else {
+					ctx.clearRect(0, 0, totalWidth, totalHeight);
+				}
+
+				// Logo
+				ctx.drawImage(logo, 0, 0, logoWidth, logoHeight);
+
+				// Línea vertical
+				ctx.fillStyle = getColor(text1, 'line');
+				ctx.fillRect(logoWidth - 10, 200, 4, 680);
+
+				// Textos
+				ctx.font = "600 90px 'Work Sans'";
+				ctx.fillStyle = getColor(text1, 'main');
+				ctx.fillText(text1, textStartX, 320);
+
+				ctx.fillStyle = getColor(text1, 'alt');
+				ctx.fillText(text2, textStartX, 440);
+
+				ctx.fillStyle = getColor(text1, 'main');
+				ctx.fillText(text3, textStartX, 560);
+
+				ctx.font = "400 80px 'Work Sans'";
+				ctx.fillStyle = getColor(text1, 'main');
+				ctx.fillText(text4, textStartX, 700);
+				ctx.fillText(text5, textStartX, 850);
+
+				// Reducción a 25%
+				const finalCanvas = document.createElement("canvas");
+				finalCanvas.width = totalWidth / 4;
+				finalCanvas.height = totalHeight / 4;
+				const finalCtx = finalCanvas.getContext("2d");
+				finalCtx.drawImage(canvas, 0, 0, finalCanvas.width, finalCanvas.height);
+
+				const dataURL = finalCanvas.toDataURL("image/png");
+
+				const downloadLink = document.getElementById('download-link');
+				downloadLink.style.display = "block";
+				downloadLink.onclick = () => {
+					const a = document.createElement('a');
+					a.href = dataURL;
+					a.download = "firma.png";
+					a.click();
+				};
+
+				canvas.style.display = "block";
+				canvas.width = finalCanvas.width;
+				canvas.height = finalCanvas.height;
+				ctx.clearRect(0, 0, canvas.width, canvas.height);
+				ctx.drawImage(finalCanvas, 0, 0);
+			};
+		}
+
+
+		function getColor(imageName, type) {
+			if (selectedImage.includes("blanco")) {
+				return "#ffffff";
+			} else if (selectedImage.includes("negro")) {
+				return "#000000";
+			} else {
+				if (type === 'main') return "rgb(87, 87, 86)";
+				if (type === 'alt') return "rgb(29, 113, 184)";
+				if (type === 'line') return "rgb(87, 87, 86)";
+			}
+		}
+	</script>
+</body>
+
+</html>
